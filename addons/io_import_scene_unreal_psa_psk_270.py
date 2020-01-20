@@ -1235,8 +1235,14 @@ def psaimport(filepath,
     armature_obj.animation_data_create()
     
     if bActionsToTrack:
-        nla_track = armature_obj.animation_data.nla_tracks.new()
-        nla_track.name = gen_name_part
+        if armature_obj.animation_data.nla_tracks is None or len(armature_obj.animation_data.nla_tracks) == 0:
+                nla_track = armature_obj.animation_data.nla_tracks.new()
+                nla_track.name = gen_name_part
+        else:
+                print("TRACK DEBUG: "+str(len(armature_obj.animation_data.nla_tracks)))
+                for track in armature_obj.animation_data.nla_tracks:
+                   print("TRACK NAME:"+track.name+" / Ends:"+str(track.strips[-1].frame_end))
+                   nla_track = track
         nla_stripes = nla_track.strips
         nla_track_last_frame = 0
     else:
@@ -1383,7 +1389,7 @@ def psaimport(filepath,
 
         # Add action to tail of the nla track
         if bActionsToTrack:
-            if nla_track_last_frame == 0:
+            if len(nla_track.strips) == 0:
                 nla_stripes.new(Name, 0, action)
             else:
                 nla_stripes.new(Name, nla_stripes[-1].frame_end, action)
