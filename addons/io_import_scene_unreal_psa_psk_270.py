@@ -65,7 +65,7 @@ from bpy.props import (FloatProperty,
                         StringProperty,
                         BoolProperty,
                         EnumProperty,
-                        PointerProperty )
+                        PointerProperty, IntProperty )
                       
 from struct import unpack, unpack_from, Struct
 import time
@@ -1022,7 +1022,8 @@ def psaimport(filepath,
         bDontInvertRoot = False,
         bUpdateTimelineRange = False,
         fcurve_interpolation = 'LINEAR',
-        error_callback = __pass
+        start_frame = 0,
+        error_callback = __pass,
         ):
     """Import animation data from 'filepath' using 'oArmature'
     
@@ -1388,11 +1389,15 @@ def psaimport(filepath,
         # Add action to tail of the nla track
         if bActionsToTrack:
             if len(nla_track.strips) == 0:
-                nla_stripes.new(Name, 0, action)
+                nstripe = nla_stripes.new(Name, 0, action)
             else:
-                nla_stripes.new(Name, nla_stripes[-1].frame_end, action)
+                nstripe = nla_stripes.new(Name, nla_stripes[-1].frame_end, action)
+
+            nstripe.action_frame_start = start_frame
 
             nla_track_last_frame += NumRawFrames
+
+
         elif is_first_action:
             first_action = action
             is_first_action = False
@@ -1524,6 +1529,11 @@ class ImportProps():
             description = "Set timeline range to match imported action[s] length.\n * If \"All actions to NLA track\" is disabled, range will be set to hold longest action.",
             default = False,
             )
+    start_frame = IntProperty(
+            name = "Frame to use as a start",
+            description = "Set which frame the animation should use as a start",
+            default = 0,
+            )
             
     def draw_psk(self, context):
         props = bpy.context.scene.pskpsa_import
@@ -1552,6 +1562,7 @@ class ImportProps():
         layout.prop(props,'bActionsToTrack')
         layout.prop(props,'bFilenameAsPrefix')
         layout.prop(props,'bUpdateTimelineRange')
+        layout.prop(props,'start_frame')
         # layout.prop(props, 'bDontInvertRoot')
         # layout.separator()
    
@@ -1695,7 +1706,8 @@ class IMPORT_OT_psa(bpy.types.Operator, ImportProps):
             oArmature = blen_get_armature_from_selection(),
             bDontInvertRoot = props.bDontInvertRoot,
             bUpdateTimelineRange = props.bUpdateTimelineRange,
-            error_callback = util_ui_show_msg
+            error_callback = util_ui_show_msg,
+            start_frame = props.start_frame
             )
         return {'FINISHED'}
     
